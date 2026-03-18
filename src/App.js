@@ -1,896 +1,824 @@
-import './App.css';
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from "react";
 
-const style = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400;500&display=swap');
- 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
- 
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
   :root {
-    --bg: #0a0612;
-    --bg2: #110d1e;
-    --purple-deep: #1a0f2e;
-    --purple-mid: #6b21a8;
-    --purple-bright: #a855f7;
-    --purple-glow: #c084fc;
-    --purple-pale: #e9d5ff;
-    --accent: #f0abfc;
-    --accent2: #38bdf8;
-    --text: #f5f0ff;
-    --text-muted: #a78bca;
-    --border: rgba(168,85,247,0.2);
-    --serif: 'Playfair Display', Georgia, serif;
-    --mono: 'DM Mono', monospace;
+    --black:   #070710;
+    --black2:  #0f0f1a;
+    --black3:  #17172a;
+    --teal:    #00ffea;
+    --teal2:   #00d4c2;
+    --coral:   #ff2d55;
+    --yellow:  #ffdd00;
+    --violet:  #bf5fff;
+    --white:   #f0f0ff;
+    --muted:   #5a5a7a;
+    --border:  #1e1e35;
+    --display: 'Bebas Neue', sans-serif;
+    --body:    'Plus Jakarta Sans', sans-serif;
   }
- 
+
   html { scroll-behavior: smooth; }
- 
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--mono);
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--body);
     overflow-x: hidden;
   }
- 
-  /* NOISE OVERLAY */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.4;
-  }
- 
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--purple-mid); border-radius: 2px; }
- 
-  /* NAV */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: var(--black2); }
+  ::-webkit-scrollbar-thumb { background: var(--teal); }
+
+  /* ── NAV ── */
   .nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.2rem 4rem;
-    background: rgba(10,6,18,0.7);
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 1.4rem 4rem;
+    background: rgba(7,7,16,0.9);
     backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(0,255,234,.1);
+    box-shadow: 0 1px 30px rgba(0,255,234,.05);
   }
- 
   .nav-logo {
-    font-family: var(--serif);
-    font-size: 1.4rem;
-    font-style: italic;
-    color: var(--purple-glow);
-    letter-spacing: -0.02em;
+    font-family: var(--display);
+    font-size:1.6rem; font-weight:400;
+    letter-spacing:.08em;
+    display:flex; align-items:center; gap:.5rem;
   }
- 
-  .nav-links {
-    display: flex;
-    gap: 2.5rem;
-    list-style: none;
+  .nav-logo-bracket { color:var(--teal); font-size:1.8rem; line-height:1; text-shadow: 0 0 20px var(--teal); }
+  .nav-pill {
+    display:flex; gap:.3rem;
+    background:var(--black3);
+    border:1px solid var(--border);
+    border-radius:100px; padding:.3rem .4rem;
   }
- 
-  .nav-links a {
-    color: var(--text-muted);
-    text-decoration: none;
-    font-size: 0.75rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    transition: color 0.3s;
+  .nav-pill a {
+    font-family:var(--body); font-size:.72rem; font-weight:600;
+    letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); text-decoration:none;
+    padding:.4rem 1rem; border-radius:100px;
+    transition: all .25s;
   }
- 
-  .nav-links a:hover { color: var(--purple-glow); }
- 
-  /* HERO */
+  .nav-pill a:hover, .nav-pill a.active {
+    background:var(--teal); color:var(--black); font-weight:700;
+    box-shadow: 0 0 16px rgba(0,255,234,.4);
+  }
+  .nav-time {
+    font-family:var(--display); font-size:1rem; font-weight:400;
+    color:var(--teal); letter-spacing:.15em;
+    border:1px solid rgba(0,255,234,.2);
+    padding:.4rem 1rem; border-radius:4px;
+    text-shadow: 0 0 12px rgba(0,255,234,.6);
+    background: rgba(0,255,234,.04);
+  }
+
+  /* ── HERO ── */
   .hero {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    padding: 8rem 4rem 4rem;
-    position: relative;
-    overflow: hidden;
+    min-height:100vh; display:flex; flex-direction:column;
+    justify-content:center; padding:8rem 4rem 4rem;
+    position:relative; overflow:hidden;
   }
- 
-  .hero-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    pointer-events: none;
+  .hero-grid-lines {
+    position:absolute; inset:0; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(0,229,204,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,204,.03) 1px, transparent 1px);
+    background-size: 60px 60px;
   }
- 
-  .orb1 {
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(168,85,247,0.25) 0%, transparent 70%);
-    top: -100px; right: -100px;
-    animation: float1 8s ease-in-out infinite;
+  .hero-blob {
+    position:absolute; border-radius:50%; filter:blur(100px); pointer-events:none;
   }
- 
-  .orb2 {
-    width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%);
-    bottom: 0; left: -100px;
-    animation: float2 10s ease-in-out infinite;
+  .blob1 { width:600px; height:600px; background:rgba(0,255,234,.12); top:-100px; right:-50px; animation: blobmove 12s ease-in-out infinite; }
+  .blob2 { width:400px; height:400px; background:rgba(255,45,85,.1); bottom:-50px; left:-50px; animation: blobmove 9s ease-in-out infinite reverse; }
+  .blob3 { width:300px; height:300px; background:rgba(191,95,255,.1); top:40%; left:40%; animation: blobmove 15s ease-in-out infinite 3s; }
+  @keyframes blobmove {
+    0%,100% { transform:translate(0,0) scale(1); }
+    33% { transform:translate(30px,-20px) scale(1.05); }
+    66% { transform:translate(-20px,30px) scale(.96); }
   }
- 
-  @keyframes float1 {
-    0%, 100% { transform: translate(0,0) scale(1); }
-    50% { transform: translate(-30px, 40px) scale(1.05); }
-  }
- 
-  @keyframes float2 {
-    0%, 100% { transform: translate(0,0); }
-    50% { transform: translate(40px, -30px); }
-  }
- 
-  .hero-content { position: relative; z-index: 1; max-width: 800px; }
- 
+
   .hero-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(168,85,247,0.1);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    padding: 0.4rem 1rem;
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--purple-glow);
-    margin-bottom: 2rem;
+    display:inline-flex; align-items:center; gap:.6rem;
+    background:rgba(0,229,204,.08); border:1px solid rgba(0,229,204,.2);
+    border-radius:4px; padding:.5rem 1rem; margin-bottom:2.5rem;
+    width:fit-content; position:relative; z-index:1;
   }
- 
-  .hero-tag::before {
-    content: '';
-    width: 6px; height: 6px;
-    background: var(--purple-bright);
-    border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
+  .hero-tag-dot {
+    width:7px; height:7px; border-radius:50%;
+    background:var(--teal);
+    animation: tagpulse 2s ease-in-out infinite;
   }
- 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.8); }
+  @keyframes tagpulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+  .hero-tag span { font-size:.7rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--teal); }
+
+  .hero-headline {
+    font-family:var(--display);
+    font-size: clamp(5rem, 11vw, 12rem);
+    font-weight:400; line-height:.88;
+    letter-spacing:.04em;
+    position:relative; z-index:1;
+    margin-bottom:1.5rem;
   }
- 
-  .hero-name {
-    font-family: var(--serif);
-    font-size: clamp(3.5rem, 8vw, 7rem);
-    font-weight: 900;
-    line-height: 0.95;
-    letter-spacing: -0.03em;
-    margin-bottom: 1.5rem;
+  .hero-headline .line1 { display:block; color:var(--white); }
+  .hero-headline .line2 {
+    display:block;
+    -webkit-text-stroke: 2px var(--teal);
+    color:transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 0 30px rgba(0,255,234,.35));
   }
- 
-  .hero-name span {
-    display: block;
-    background: linear-gradient(135deg, var(--purple-pale) 0%, var(--purple-glow) 40%, var(--accent) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .hero-headline .line3 { display:block; color:var(--coral); font-family:var(--body); font-size:.13em; font-weight:600; margin-top:.6em; letter-spacing:.12em; text-transform:uppercase; text-shadow: 0 0 20px rgba(255,45,85,.5); }
+
+  .hero-bottom {
+    display:flex; justify-content:space-between; align-items:flex-end;
+    margin-top:4rem; position:relative; z-index:1;
+    border-top:1px solid var(--border); padding-top:2rem; flex-wrap:wrap; gap:2rem;
   }
- 
-  .hero-name em {
-    display: block;
-    font-style: italic;
-    color: var(--text-muted);
-    -webkit-text-fill-color: var(--text-muted);
-    font-size: 0.6em;
-    font-weight: 400;
-    margin-top: 0.3em;
-    letter-spacing: 0.02em;
-  }
- 
   .hero-desc {
-    font-size: 1rem;
-    color: var(--text-muted);
-    line-height: 1.8;
-    max-width: 500px;
-    margin-bottom: 3rem;
+    font-size:1rem; font-weight:400; color:#888;
+    line-height:1.8; max-width:420px;
   }
- 
-  .hero-cta {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
+  .hero-desc strong { color:var(--white); font-weight:700; }
+  .hero-actions { display:flex; gap:1rem; flex-wrap:wrap; }
+
+  .mag-btn {
+    position:relative; overflow:hidden;
+    font-family:var(--display); font-size:.8rem; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase;
+    padding:.9rem 2.2rem; border-radius:3px;
+    text-decoration:none; display:inline-flex; align-items:center; gap:.5rem;
+    transition: transform .3s, box-shadow .3s;
   }
- 
-  .btn-primary {
-    background: linear-gradient(135deg, var(--purple-mid), var(--purple-bright));
-    color: white;
-    border: none;
-    padding: 0.85rem 2rem;
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.3s;
-    text-decoration: none;
-    display: inline-block;
-    box-shadow: 0 0 30px rgba(168,85,247,0.3);
+  .mag-btn::before {
+    content:''; position:absolute; inset:0;
+    background:var(--teal); transform:translateY(101%);
+    transition:transform .35s cubic-bezier(.76,0,.24,1);
   }
- 
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 50px rgba(168,85,247,0.5);
+  .mag-btn:hover::before { transform:translateY(0); }
+  .mag-btn span { position:relative; z-index:1; }
+  .mag-btn-primary {
+    background:var(--teal); color:var(--black);
+    border:2px solid var(--teal);
   }
- 
-  .btn-secondary {
-    background: transparent;
-    color: var(--purple-glow);
-    border: 1px solid var(--border);
-    padding: 0.85rem 2rem;
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.3s;
-    text-decoration: none;
-    display: inline-block;
+  .mag-btn-primary::before { background:var(--yellow); }
+  .mag-btn-primary:hover { color:var(--black); }
+  .mag-btn-ghost {
+    background:transparent; color:var(--white);
+    border:2px solid var(--border);
   }
- 
-  .btn-secondary:hover {
-    border-color: var(--purple-bright);
-    background: rgba(168,85,247,0.05);
+  .mag-btn-ghost::before { background:var(--coral); }
+  .mag-btn-ghost:hover { color:var(--white); border-color:var(--coral); }
+
+  .hero-scroll-hint {
+    display:flex; align-items:center; gap:.7rem;
+    font-size:.7rem; font-weight:500; letter-spacing:.15em;
+    text-transform:uppercase; color:var(--muted);
   }
- 
-  /* SECTIONS */
-  section {
-    padding: 6rem 4rem;
-    max-width: 1100px;
-    margin: 0 auto;
+  .scroll-line {
+    width:40px; height:1px; background:var(--muted);
+    animation: scrollpulse 2s ease-in-out infinite;
   }
- 
-  .section-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--purple-bright);
-    margin-bottom: 0.5rem;
+  @keyframes scrollpulse { 0%,100%{transform:scaleX(1)} 50%{transform:scaleX(.4); transform-origin:left;} }
+
+  /* ── SECTION ── */
+  .sec { padding:6rem 4rem; max-width:1200px; margin:0 auto; }
+  .full-sec { padding:6rem 4rem; }
+
+  .sec-eyebrow {
+    display:flex; align-items:center; gap:1rem; margin-bottom:1rem;
   }
- 
-  .section-title {
-    font-family: var(--serif);
-    font-size: clamp(2rem, 4vw, 3.5rem);
-    font-weight: 700;
-    line-height: 1.1;
-    margin-bottom: 3rem;
-    color: var(--text);
+  .sec-num {
+    font-family:var(--display); font-size:.9rem; font-weight:400;
+    letter-spacing:.2em; color:var(--teal);
+    background:rgba(0,255,234,.07); border:1px solid rgba(0,255,234,.2);
+    padding:.25rem .7rem; border-radius:2px;
+    text-shadow: 0 0 10px rgba(0,255,234,.5);
   }
- 
-  .section-title em {
-    font-style: italic;
-    color: var(--purple-glow);
+  .sec-label {
+    font-size:.7rem; font-weight:700; letter-spacing:.25em;
+    text-transform:uppercase; color:var(--muted);
   }
- 
-  /* DIVIDER */
-  .divider {
-    width: 100%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border), transparent);
-    margin: 0;
+  .sec-title {
+    font-family:var(--display);
+    font-size: clamp(3rem, 5.5vw, 5.5rem);
+    font-weight:400; letter-spacing:.05em; line-height:1;
+    margin-bottom:3.5rem;
   }
- 
-  /* ABOUT */
-  .about-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: center;
+  .sec-title em { font-style:normal; color:var(--teal); text-shadow: 0 0 20px rgba(0,255,234,.4); }
+  .sec-title .coral { color:var(--coral); text-shadow: 0 0 20px rgba(255,45,85,.4); }
+  .sec-title .yellow { color:var(--yellow); text-shadow: 0 0 20px rgba(255,221,0,.3); }
+
+  /* ── ABOUT ── */
+  .about-layout { display:grid; grid-template-columns:1.2fr 1fr; gap:5rem; align-items:start; }
+  .about-text { font-size:1.05rem; font-weight:400; line-height:1.85; color:#aaa; }
+  .about-text p { margin-bottom:1.2rem; }
+  .about-text strong { color:var(--white); font-weight:700; }
+  .about-text .highlight {
+    color:var(--teal); font-weight:700;
+    border-bottom:2px solid rgba(0,229,204,.3);
   }
- 
-  .about-text p {
-    color: var(--text-muted);
-    line-height: 1.9;
-    font-size: 0.9rem;
-    margin-bottom: 1.2rem;
+
+  .about-cards { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  .about-card {
+    background:var(--black2); border:1px solid var(--border);
+    border-radius:8px; padding:1.8rem;
+    transition: all .3s; position:relative; overflow:hidden;
   }
- 
-  .about-text p strong {
-    color: var(--purple-pale);
-    font-weight: 500;
+  .about-card::before {
+    content:''; position:absolute;
+    top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, var(--teal), var(--violet));
+    transform:scaleX(0); transform-origin:left;
+    transition:transform .4s ease;
   }
- 
-  .about-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+  .about-card:hover { border-color:rgba(0,255,234,.3); transform:translateY(-4px); box-shadow: 0 10px 40px rgba(0,255,234,.1); }
+  .about-card:hover::before { transform:scaleX(1); }
+  .card-val {
+    font-family:var(--display); font-size:3.5rem; font-weight:400;
+    color:var(--teal); line-height:1; margin-bottom:.3rem;
+    text-shadow: 0 0 30px rgba(0,255,234,.5);
   }
- 
-  .stat-card {
-    background: rgba(168,85,247,0.05);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.5rem;
-    transition: all 0.3s;
+  .card-label { font-size:.72rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
+
+  /* ── SKILLS ── */
+  .skills-full { background:var(--black2); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+  .skills-inner { max-width:1200px; margin:0 auto; padding:6rem 4rem; }
+  .skills-tabs { display:flex; gap:.5rem; margin-bottom:2.5rem; flex-wrap:wrap; }
+  .skill-tab {
+    font-family:var(--body); font-size:.75rem; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase;
+    padding:.55rem 1.4rem; border-radius:3px;
+    border:1px solid var(--border);
+    background:transparent; color:var(--muted);
+    cursor:pointer; transition:all .25s;
   }
- 
-  .stat-card:hover {
-    border-color: var(--purple-bright);
-    background: rgba(168,85,247,0.1);
-    transform: translateY(-3px);
+  .skill-tab:hover { border-color:var(--teal); color:var(--teal); box-shadow: 0 0 12px rgba(0,255,234,.2); }
+  .skill-tab.active { background:var(--teal); color:var(--black); border-color:var(--teal); font-weight:800; box-shadow: 0 0 25px rgba(0,255,234,.4); }
+
+  .skill-panel { display:none; animation: fadeup .4s ease; }
+  .skill-panel.active { display:block; }
+  @keyframes fadeup { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  .skill-bars { display:flex; flex-direction:column; gap:1.2rem; }
+  .skill-bar-row { display:flex; flex-direction:column; gap:.5rem; }
+  .skill-bar-top { display:flex; justify-content:space-between; align-items:center; }
+  .skill-bar-name { font-size:.9rem; font-weight:700; color:var(--white); }
+  .skill-bar-pct { font-family:var(--display); font-size:.8rem; font-weight:700; color:var(--teal); }
+  .skill-bar-track {
+    height:5px; background:var(--black3); border-radius:100px; overflow:hidden;
   }
- 
-  .stat-num {
-    font-family: var(--serif);
-    font-size: 2.5rem;
-    font-weight: 900;
-    color: var(--purple-glow);
-    line-height: 1;
-    margin-bottom: 0.3rem;
+  .skill-bar-fill {
+    height:100%; border-radius:100px;
+    background: linear-gradient(90deg, var(--teal), var(--violet), var(--coral));
+    width:0; transition:width 1s cubic-bezier(.25,.46,.45,.94);
+    box-shadow: 0 0 8px rgba(0,255,234,.3);
   }
- 
-  .stat-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--text-muted);
+
+  /* ── EXPERIENCE ── */
+  .exp-tabs { display:flex; gap:0; margin-bottom:3rem; border-bottom:1px solid var(--border); }
+  .exp-tab {
+    font-family:var(--body); font-size:.82rem; font-weight:700;
+    letter-spacing:.05em; padding:1rem 2rem;
+    background:transparent; color:var(--muted);
+    border:none; border-bottom:2px solid transparent;
+    cursor:pointer; transition:all .25s; margin-bottom:-1px;
+    text-align:left; text-transform:uppercase;
   }
- 
-  /* SKILLS */
-  .skills-container { display: flex; flex-direction: column; gap: 2.5rem; }
- 
-  .skill-category-title {
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--purple-bright);
-    margin-bottom: 1rem;
+  .exp-tab:hover { color:var(--white); }
+  .exp-tab.active { color:var(--teal); border-bottom-color:var(--teal); text-shadow: 0 0 12px rgba(0,255,234,.5); }
+
+  .exp-panel { display:none; animation:fadeup .4s ease; }
+  .exp-panel.active { display:block; }
+
+  .exp-header { margin-bottom:2rem; }
+  .exp-role-title {
+    font-family:var(--display); font-size:2.8rem; font-weight:400;
+    color:var(--white); letter-spacing:.04em; margin-bottom:.4rem; line-height:1;
   }
- 
-  .skills-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+  .exp-meta { display:flex; gap:1.5rem; align-items:center; flex-wrap:wrap; }
+  .exp-company-badge {
+    display:inline-flex; align-items:center; gap:.5rem;
+    background:rgba(0,229,204,.08); border:1px solid rgba(0,229,204,.2);
+    border-radius:3px; padding:.35rem .8rem;
+    font-size:.78rem; font-weight:700; color:var(--teal); letter-spacing:.05em;
   }
- 
-  .skill-pill {
-    background: rgba(168,85,247,0.08);
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    padding: 0.5rem 1.2rem;
-    font-size: 0.78rem;
-    color: var(--purple-pale);
-    letter-spacing: 0.05em;
-    transition: all 0.25s;
-    cursor: default;
+  .exp-period-badge {
+    font-size:.75rem; font-weight:500; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted);
+    border:1px solid var(--border); padding:.35rem .8rem; border-radius:3px;
   }
- 
-  .skill-pill:hover {
-    background: rgba(168,85,247,0.2);
-    border-color: var(--purple-bright);
-    color: white;
-    transform: translateY(-2px);
+  .exp-bullets { list-style:none; display:flex; flex-direction:column; gap:.85rem; }
+  .exp-bullets li {
+    display:flex; gap:1rem; align-items:flex-start;
+    font-size:.92rem; font-weight:400; line-height:1.7; color:#aaa;
   }
- 
-  /* PROJECTS */
-  .projects-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
+  .exp-bullet-icon {
+    width:20px; height:20px; flex-shrink:0;
+    background:rgba(0,229,204,.1); border:1px solid rgba(0,229,204,.2);
+    border-radius:3px; display:flex; align-items:center; justify-content:center;
+    font-size:.6rem; color:var(--teal); margin-top:3px;
   }
- 
-  .project-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 2rem;
-    transition: all 0.35s;
-    position: relative;
-    overflow: hidden;
-    cursor: pointer;
+
+  /* ── PROJECTS ── */
+  .projects-layout { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+  .proj-card {
+    background:var(--black2); border:1px solid var(--border);
+    border-radius:10px; padding:2rem;
+    transition:all .35s; position:relative; overflow:hidden;
+    display:flex; flex-direction:column; gap:1rem;
   }
- 
-  .project-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(168,85,247,0.05) 0%, transparent 60%);
-    opacity: 0;
-    transition: opacity 0.35s;
+  .proj-card-glow {
+    position:absolute; width:200px; height:200px;
+    border-radius:50%; filter:blur(60px);
+    pointer-events:none; opacity:0;
+    transition:opacity .5s;
+    background:radial-gradient(circle, rgba(0,229,204,.15), transparent);
   }
- 
-  .project-card:hover::before { opacity: 1; }
- 
-  .project-card:hover {
-    border-color: var(--purple-bright);
-    transform: translateY(-6px);
-    box-shadow: 0 20px 60px rgba(168,85,247,0.15);
+  .proj-card:hover .proj-card-glow { opacity:1; }
+  .proj-card:hover { border-color:rgba(0,255,234,.4); transform:translateY(-6px); box-shadow:0 20px 60px rgba(0,255,234,.12), 0 0 0 1px rgba(0,255,234,.05); }
+
+  .proj-num {
+    font-family:var(--display); font-size:.85rem; font-weight:400;
+    letter-spacing:.2em; color:var(--teal);
+    background:rgba(0,255,234,.07); border:1px solid rgba(0,255,234,.2);
+    width:fit-content; padding:.2rem .7rem; border-radius:2px;
+    text-shadow: 0 0 8px rgba(0,255,234,.4);
   }
- 
-  .project-num {
-    font-family: var(--serif);
-    font-size: 3rem;
-    font-weight: 900;
-    color: rgba(168,85,247,0.15);
-    line-height: 1;
-    margin-bottom: 1rem;
-    font-style: italic;
+  .proj-title {
+    font-family:var(--display); font-size:1.5rem; font-weight:400;
+    color:var(--white); letter-spacing:.04em; line-height:1.1;
   }
- 
-  .project-title {
-    font-family: var(--serif);
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 0.75rem;
+  .proj-desc { font-size:.85rem; color:#888; line-height:1.7; flex:1; }
+  .proj-footer { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.5rem; }
+  .proj-tags { display:flex; flex-wrap:wrap; gap:.4rem; }
+  .proj-tag {
+    font-size:.62rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--black); background:var(--teal);
+    padding:.2rem .55rem; border-radius:2px;
   }
- 
-  .project-desc {
-    font-size: 0.82rem;
-    color: var(--text-muted);
-    line-height: 1.7;
-    margin-bottom: 1.5rem;
+  .proj-tag.coral { background:var(--coral); }
+  .proj-tag.yellow { background:var(--yellow); }
+  .proj-arrow {
+    width:32px; height:32px; border-radius:50%;
+    border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:.9rem; color:var(--muted);
+    transition:all .25s; flex-shrink:0;
   }
- 
-  .project-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+  .proj-card:hover .proj-arrow { background:var(--teal); border-color:var(--teal); color:var(--black); }
+
+  /* ── EDUCATION ── */
+  .edu-layout { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+  .edu-card {
+    background:var(--black2); border:1px solid var(--border);
+    border-radius:10px; padding:2rem;
+    transition:all .3s; position:relative; overflow:hidden;
   }
- 
-  .project-tag {
-    background: rgba(168,85,247,0.1);
-    border: 1px solid rgba(168,85,247,0.2);
-    border-radius: 4px;
-    padding: 0.25rem 0.6rem;
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
-    color: var(--purple-glow);
-    text-transform: uppercase;
+  .edu-card::after {
+    content:''; position:absolute;
+    bottom:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--teal), var(--yellow));
+    transform:scaleX(0); transform-origin:left; transition:transform .4s ease;
   }
- 
-  .project-link {
-    position: absolute;
-    top: 1.5rem; right: 1.5rem;
-    color: var(--text-muted);
-    font-size: 1.2rem;
-    transition: color 0.3s;
-    text-decoration: none;
+  .edu-card:hover { border-color:rgba(0,255,234,.25); transform:translateY(-4px); box-shadow: 0 12px 40px rgba(191,95,255,.1); }
+  .edu-card:hover::after { transform:scaleX(1); }
+  .edu-icon { font-size:2rem; margin-bottom:1rem; }
+  .edu-deg { font-family:var(--display); font-size:1.2rem; font-weight:400; color:var(--white); margin-bottom:.4rem; line-height:1.2; letter-spacing:.03em; }
+  .edu-school { font-size:.82rem; color:var(--muted); margin-bottom:1rem; line-height:1.5; font-weight:500; }
+  .edu-score {
+    display:inline-flex; align-items:center; gap:.4rem;
+    background:rgba(255,221,0,.08); border:1px solid rgba(255,221,0,.25);
+    border-radius:3px; padding:.3rem .8rem;
+    font-family:var(--body); font-size:.78rem; font-weight:800; color:var(--yellow);
+    text-shadow: 0 0 12px rgba(255,221,0,.4);
   }
- 
-  .project-card:hover .project-link { color: var(--purple-glow); }
- 
-  /* EXPERIENCE */
-  .exp-timeline { position: relative; }
- 
-  .exp-timeline::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 1px;
-    background: linear-gradient(to bottom, var(--purple-bright), transparent);
+
+  /* ── CONTACT ── */
+  .contact-full { background:var(--black2); border-top:1px solid var(--border); }
+  .contact-inner { max-width:1200px; margin:0 auto; padding:6rem 4rem; }
+  .contact-blurb { font-size:1.1rem; color:#888; line-height:1.8; margin-bottom:3rem; max-width:600px; font-weight:500; }
+  .contact-blurb strong { color:var(--white); }
+  .contact-links { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; max-width:800px; }
+  .c-link {
+    display:flex; align-items:center; gap:1rem;
+    padding:1.2rem 1.5rem; border-radius:8px;
+    border:1px solid var(--border); text-decoration:none;
+    transition:all .3s; background:var(--black3);
   }
- 
-  .exp-item {
-    padding-left: 2.5rem;
-    padding-bottom: 3rem;
-    position: relative;
+  .c-link:hover { background:rgba(0,255,234,.04); border-color:var(--teal); transform:translateY(-3px); box-shadow:0 8px 30px rgba(0,255,234,.1); }
+  .c-icon {
+    width:42px; height:42px; border-radius:8px;
+    background:rgba(0,255,234,.08); border:1px solid rgba(0,255,234,.15);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem; flex-shrink:0;
   }
- 
-  .exp-item::before {
-    content: '';
-    position: absolute;
-    left: -4px; top: 6px;
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    background: var(--purple-bright);
-    box-shadow: 0 0 12px var(--purple-bright);
-  }
- 
-  .exp-period {
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--purple-bright);
-    margin-bottom: 0.4rem;
-  }
- 
-  .exp-role {
-    font-family: var(--serif);
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 0.2rem;
-  }
- 
-  .exp-company {
-    font-size: 0.85rem;
-    color: var(--purple-glow);
-    margin-bottom: 0.8rem;
-    font-style: italic;
-  }
- 
-  .exp-desc {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    line-height: 1.8;
-    max-width: 600px;
-  }
- 
-  /* CONTACT */
-  .contact-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: start;
-  }
- 
-  .contact-info p {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    line-height: 1.8;
-    margin-bottom: 2rem;
-  }
- 
-  .contact-links { display: flex; flex-direction: column; gap: 1rem; }
- 
-  .contact-link {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    color: var(--text-muted);
-    text-decoration: none;
-    font-size: 0.82rem;
-    letter-spacing: 0.05em;
-    transition: color 0.3s;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid var(--border);
-  }
- 
-  .contact-link:hover { color: var(--purple-glow); }
- 
-  .contact-link-icon {
-    width: 32px; height: 32px;
-    background: rgba(168,85,247,0.1);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    flex-shrink: 0;
-  }
- 
-  .contact-form { display: flex; flex-direction: column; gap: 1.2rem; }
- 
-  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
- 
-  .form-label {
-    font-size: 0.68rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--purple-bright);
-  }
- 
-  .form-input, .form-textarea {
-    background: rgba(168,85,247,0.05);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.85rem 1rem;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    outline: none;
-    transition: border-color 0.3s;
-    resize: none;
-  }
- 
-  .form-input:focus, .form-textarea:focus {
-    border-color: var(--purple-bright);
-    background: rgba(168,85,247,0.08);
-  }
- 
-  .form-textarea { min-height: 130px; }
- 
-  /* FOOTER */
+  .c-info { display:flex; flex-direction:column; gap:.1rem; }
+  .c-info-label { font-size:.65rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
+  .c-info-val { font-size:.92rem; font-weight:600; color:var(--white); }
+
+  /* ── FOOTER ── */
   footer {
-    text-align: center;
-    padding: 2.5rem 4rem;
-    border-top: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
+    background:var(--black); border-top:1px solid var(--border);
+    padding:2rem 4rem; display:flex; justify-content:space-between; align-items:center;
   }
- 
-  footer span { color: var(--purple-bright); }
- 
-  /* FADE IN */
-  .fade-in {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.7s ease, transform 0.7s ease;
+  footer p { font-size:.75rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  footer span { color:var(--teal); }
+
+  /* ── REVEAL ── */
+  .reveal { opacity:0; transform:translateY(28px); transition:opacity .75s ease, transform .75s ease; }
+  .reveal.show { opacity:1; transform:translateY(0); }
+
+  /* ── TICKER ── */
+  .ticker-wrap {
+    background:var(--teal); overflow:hidden;
+    padding:.6rem 0; border-top:1px solid var(--teal2); border-bottom:1px solid var(--teal2);
   }
-  .fade-in.visible {
-    opacity: 1;
-    transform: translateY(0);
+  .ticker-track {
+    display:flex; gap:0; width:max-content;
+    animation: ticker 25s linear infinite;
   }
- 
-  @media (max-width: 768px) {
-    .nav { padding: 1rem 1.5rem; }
-    .nav-links { display: none; }
-    section { padding: 4rem 1.5rem; }
-    .hero { padding: 7rem 1.5rem 3rem; }
-    .about-grid, .contact-wrapper { grid-template-columns: 1fr; gap: 2rem; }
+  @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  .ticker-item {
+    font-family:var(--display); font-size:.72rem; font-weight:700;
+    letter-spacing:.2em; text-transform:uppercase; color:var(--black);
+    padding:0 2.5rem; white-space:nowrap;
+    display:flex; align-items:center; gap:1rem;
+  }
+  .ticker-dot { width:5px; height:5px; background:var(--black); border-radius:50%; opacity:.4; }
+
+  @media (max-width:900px) {
+    .nav { padding:1rem 1.5rem; }
+    .nav-pill { display:none; }
+    .hero { padding:7rem 1.5rem 3rem; }
+    .sec, .skills-inner, .contact-inner { padding:4rem 1.5rem; }
+    .full-sec { padding:4rem 1.5rem; }
+    .about-layout { grid-template-columns:1fr; gap:3rem; }
+    .contact-links { grid-template-columns:1fr; }
+    .projects-layout, .edu-layout { grid-template-columns:1fr; }
+    .about-cards { grid-template-columns:1fr 1fr; }
+    footer { flex-direction:column; gap:.5rem; padding:1.5rem; }
   }
 `;
 
-const data = {
-  name: "Alex Rivera",
-  role: "Full Stack Developer",
-  tagline: "& Creative Technologist",
-  bio: [
-    "I craft <strong>digital experiences</strong> that live at the intersection of elegant engineering and thoughtful design. With a passion for clean code and intuitive interfaces, I turn complex problems into simple, beautiful solutions.",
-    "When I'm not pushing pixels or architecting systems, you'll find me exploring the edges of what technology can create — from generative art to experimental web experiences."
+const skills = {
+  Frontend: [
+    { name: "React.js", pct: 92 }, { name: "Angular", pct: 88 },
+    { name: "TypeScript", pct: 85 }, { name: "JavaScript", pct: 90 }, { name: "Redux / NgRx", pct: 80 },
   ],
-  stats: [
-    { num: "4+", label: "Years Experience" },
-    { num: "32", label: "Projects Shipped" },
-    { num: "12", label: "Happy Clients" },
-    { num: "8", label: "Open Source Repos" },
+  Styling: [
+    { name: "CSS / SCSS / SASS", pct: 90 }, { name: "HTML5", pct: 95 },
+    { name: "Bootstrap", pct: 82 }, { name: "LESS", pct: 72 },
   ],
-  skills: [
-    { category: "Frontend", items: ["React.js", "Next.js", "TypeScript", "Tailwind CSS", "Framer Motion", "Three.js"] },
-    { category: "Backend", items: ["Node.js", "Java", "Spring Boot", "PostgreSQL", "MongoDB", "Redis"] },
-    { category: "Tools & Platforms", items: ["Docker", "AWS", "Git", "Figma", "Vercel", "Linux"] },
+  "Libraries & Tools": [
+    { name: "RxJS", pct: 83 }, { name: "Git", pct: 88 },
+    { name: "RESTful APIs", pct: 87 }, { name: "Postman", pct: 80 }, { name: "Java", pct: 65 },
   ],
-  projects: [
-    { title: "Lumina Dashboard", desc: "A real-time analytics platform with interactive data visualizations and AI-powered insights for SaaS businesses.", tags: ["React", "D3.js", "Node.js", "PostgreSQL"] },
-    { title: "Orbis Commerce", desc: "Full-stack e-commerce solution with headless CMS, dynamic pricing engine, and seamless payment integrations.", tags: ["Next.js", "Stripe", "MongoDB", "Redis"] },
-    { title: "Pulse Social", desc: "A social networking app with real-time messaging, content feeds, and ML-based recommendation engine.", tags: ["React Native", "GraphQL", "Firebase"] },
-    { title: "Nexus API Gateway", desc: "Scalable microservices gateway with rate limiting, auth middleware, and automatic API documentation generation.", tags: ["Java", "Spring Boot", "Docker", "AWS"] },
-    { title: "Velox CLI", desc: "Developer productivity tool that automates boilerplate generation, git workflows, and deployment pipelines.", tags: ["Node.js", "TypeScript", "Shell"] },
-    { title: "Ether Canvas", desc: "Generative art platform where algorithms and user input co-create unique visual compositions in real time.", tags: ["Three.js", "WebGL", "Canvas API"] },
-  ],
-  experience: [
-    { period: "2023 — Present", role: "Senior Frontend Engineer", company: "Nexus Technologies, San Francisco", desc: "Leading the frontend architecture for a B2B SaaS platform serving 50,000+ users. Reduced bundle size by 40% and improved core web vitals scores to 98/100." },
-    { period: "2021 — 2023", role: "Full Stack Developer", company: "Orbit Digital Agency, Remote", desc: "Built end-to-end web applications for clients across fintech, healthcare, and e-commerce. Delivered 14 projects on time with an average client satisfaction score of 4.9/5." },
-    { period: "2020 — 2021", role: "Junior Developer", company: "Spark Startup Studio, Austin", desc: "Contributed to 3 early-stage product launches. Developed RESTful APIs and responsive frontends using React and Node.js in a fast-paced agile environment." },
-  ],
-  contact: {
-    email: "alex.rivera@email.com",
-    github: "github.com/alexrivera",
-    linkedin: "linkedin.com/in/alexrivera",
-    twitter: "@alexrivera_dev",
-  }
 };
 
-function useInView(ref) {
-  const [visible, setVisible] = useState(false);
+const experience = [
+  {
+    tab: "WeCodee",
+    role: "Associate Consultant – Frontend Developer",
+    company: "WeCodee Innovations, Coimbatore",
+    period: "Oct 2024 — Present",
+    bullets: [
+      "Developed and maintained secure, scalable banking web applications using React, Angular, TypeScript, and RxJS.",
+      "Mentored 4 junior developers on React.js, Angular, RxJS, and NgRx — accelerating onboarding and improving team code quality.",
+      "Implemented responsive UI components, form validations, and role-based access control for financial workflows.",
+      "Integrated RESTful APIs for account management, transactions, and reporting.",
+      "Assisted in deploying applications to client servers ensuring smooth production rollouts.",
+    ]
+  },
+  {
+    tab: "HRlytics",
+    role: "Software Developer",
+    company: "HRlytics Private Limited, Bangalore",
+    period: "Aug 2023 — Sep 2024",
+    bullets: [
+      "Built two AI-powered examination modules (video and audio question types) for an EdTech platform.",
+      "Developed a real-time user analytics dashboard visualising all user actions for data-driven product decisions.",
+      "Developed and deployed reusable React.js components, cutting development time for future features by 30%.",
+    ]
+  }
+];
+
+const projects = [
+  { name: "AI Examination Modules", desc: "Two AI-powered exam modules — video and audio-based question types — for an EdTech platform. Responsive interfaces guiding learners through each examination flow.", tags: ["React.js", "AI", "EdTech"], color: "teal" },
+  { name: "Springflow – National ID", desc: "Integrated National ID verification into bank account creation workflows with robust API integration and strict banking compliance.", tags: ["Angular", "REST API", "Banking"], color: "coral" },
+  { name: "AOB – Customer Onboarding", desc: "Multi-step onboarding app with form validations and role-based screens for new banking customers with real-time data submission.", tags: ["React.js", "RBAC", "Forms"], color: "yellow" },
+  { name: "CDB – Bill Payments", desc: "Secure bill payment and transaction history UI with filtering, status tracking, and full banking security compliance.", tags: ["Angular", "TypeScript"], color: "teal" },
+  { name: "ICB TIPS – Fund Transfer", desc: "Multi-screen module covering bill payments, TRA statements, transaction history, and fund transfers with real-time API integration.", tags: ["React.js", "RxJS", "Real-time"], color: "coral" },
+  { name: "WeEngage – Campaigns", desc: "Notification trigger system and campaign management module with customer segmentation, scheduling UI, and audience targeting.", tags: ["Angular", "NgRx", "UI"], color: "yellow" },
+];
+
+const education = [
+  { icon: "🎓", deg: "B.E. – Electrical & Electronics Engineering", school: "Karpagam College of Engineering", score: "CGPA: 8.9" },
+  { icon: "📚", deg: "Higher Secondary Education (HSE)", school: "San Jose Matriculation Higher Secondary School", score: "80.83%" },
+  { icon: "🏫", deg: "Secondary School (SSLC)", school: "San Jose Matriculation Higher Secondary School", score: "91%" },
+];
+
+function useReveal(ref) {
+  const [show, setShow] = useState(false);
   useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.1 });
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setShow(true); }, { threshold: 0.07 });
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, []);
-  return visible;
+  return show;
 }
 
-function FadeIn({ children, delay = 0 }) {
+function Rev({ children, delay = 0 }) {
   const ref = useRef(null);
-  const visible = useInView(ref);
+  const show = useReveal(ref);
+  return <div ref={ref} className={`reveal${show ? " show" : ""}`} style={{ transitionDelay: `${delay}ms` }}>{children}</div>;
+}
+
+function SkillBars({ items, active }) {
+  const ref = useRef(null);
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => {
+    if (!active) return;
+    setAnimate(false);
+    const t = setTimeout(() => setAnimate(true), 100);
+    return () => clearTimeout(t);
+  }, [active, items]);
   return (
-    <div ref={ref} className={`fade-in${visible ? " visible" : ""}`} style={{ transitionDelay: `${delay}ms` }}>
-      {children}
+    <div className="skill-bars" ref={ref}>
+      {items.map((s, i) => (
+        <div className="skill-bar-row" key={s.name}>
+          <div className="skill-bar-top">
+            <span className="skill-bar-name">{s.name}</span>
+            <span className="skill-bar-pct">{s.pct}%</span>
+          </div>
+          <div className="skill-bar-track">
+            <div className="skill-bar-fill" style={{ width: animate ? `${s.pct}%` : "0%", transitionDelay: `${i * 80}ms` }} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-function App() {
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [sent, setSent] = useState(false);
+const tickerItems = ["React.js", "Angular", "TypeScript", "RxJS", "NgRx", "Redux", "SCSS", "REST APIs", "Banking UI", "EdTech", "Mentorship", "Agile"];
 
-  const handleSubmit = () => {
-    if (formData.name && formData.email && formData.message) {
-      setSent(true);
-      setTimeout(() => setSent(false), 3000);
-      setFormData({ name: "", email: "", message: "" });
-    }
-  };
+export default function App() {
+  const [time, setTime] = useState("");
+  const [activeSkill, setActiveSkill] = useState("Frontend");
+  const [activeExp, setActiveExp] = useState(0);
+  const [activeNav, setActiveNav] = useState("about");
+
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      setTime(now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }));
+    };
+    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) setActiveNav(e.target.id); });
+    }, { threshold: 0.4 });
+    ["about", "skills", "experience", "projects", "education", "contact"].forEach(id => {
+      const el = document.getElementById(id); if (el) obs.observe(el);
+    });
+    return () => obs.disconnect();
+  }, []);
 
   return (
     <>
-      <style>{style}</style>
+      <style>{css}</style>
 
       {/* NAV */}
       <nav className="nav">
-        <div className="nav-logo">{data.name.split(" ")[0]}.</div>
-        <ul className="nav-links">
-          {["about", "skills", "projects", "experience", "contact"].map(s => (
-            <li key={s}><a href={`#${s}`}>{s}</a></li>
+        <div className="nav-logo">
+          <span className="nav-logo-bracket">[</span>
+          Surya R
+          <span className="nav-logo-bracket">]</span>
+        </div>
+        <div className="nav-pill">
+          {["about", "skills", "experience", "projects", "contact"].map(s => (
+            <a key={s} href={`#${s}`} className={activeNav === s ? "active" : ""}>{s}</a>
           ))}
-        </ul>
+        </div>
+        <div className="nav-time">🕐 {time} IST</div>
       </nav>
 
       {/* HERO */}
-      <div className="hero" id="home">
-        <div className="hero-orb orb1" />
-        <div className="hero-orb orb2" />
-        <div className="hero-content">
-          <div className="hero-tag">Available for work</div>
-          <h1 className="hero-name">
-            <span>{data.name}</span>
-            <em>{data.role} {data.tagline}</em>
-          </h1>
+      <section className="hero">
+        <div className="hero-grid-lines" />
+        <div className="hero-blob blob1" /><div className="hero-blob blob2" /><div className="hero-blob blob3" />
+
+        <div className="hero-tag">
+          <div className="hero-tag-dot" />
+          <span>Available for new opportunities</span>
+        </div>
+
+        <h1 className="hero-headline">
+          <span className="line1">Surya R.</span>
+          <span className="line2">Frontend Dev</span>
+          <span className="line3">React.js · Angular · TypeScript · Banking & EdTech Specialist</span>
+        </h1>
+
+        <div className="hero-bottom">
           <p className="hero-desc">
-            Building beautiful, high-performance web applications with modern technologies. Turning ideas into elegant digital realities.
+            Building <strong>precise, performant, and beautiful</strong> web interfaces for financial platforms and EdTech products. Based in <strong>Coimbatore, India</strong>.
           </p>
-          <div className="hero-cta">
-            <a href="#projects" className="btn-primary">View My Work</a>
-            <a href="#contact" className="btn-secondary">Get In Touch</a>
+          <div className="hero-actions">
+            <a href="#projects" className="mag-btn mag-btn-primary"><span>View Projects ↗</span></a>
+            <a href="#contact" className="mag-btn mag-btn-ghost"><span>Let's Talk</span></a>
           </div>
+          <div className="hero-scroll-hint">
+            <div className="scroll-line" />
+            Scroll to explore
+          </div>
+        </div>
+      </section>
+
+      {/* TICKER */}
+      <div className="ticker-wrap">
+        <div className="ticker-track">
+          {[...tickerItems, ...tickerItems].map((t, i) => (
+            <div className="ticker-item" key={i}><span className="ticker-dot" />{t}</div>
+          ))}
         </div>
       </div>
 
-      <div className="divider" />
-
       {/* ABOUT */}
       <section id="about">
-        <FadeIn>
-          <div className="section-label">01 — About</div>
-          <h2 className="section-title">A little bit about <em>me</em></h2>
-        </FadeIn>
-        <div className="about-grid">
-          <FadeIn delay={100}>
-            <div className="about-text">
-              {data.bio.map((p, i) => (
-                <p key={i} dangerouslySetInnerHTML={{ __html: p }} />
-              ))}
-            </div>
-          </FadeIn>
-          <FadeIn delay={200}>
-            <div className="about-stats">
-              {data.stats.map((s, i) => (
-                <div className="stat-card" key={i}>
-                  <div className="stat-num">{s.num}</div>
-                  <div className="stat-label">{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      <div className="divider" />
-
-      {/* SKILLS */}
-      <section id="skills">
-        <FadeIn>
-          <div className="section-label">02 — Skills</div>
-          <h2 className="section-title">Technologies I <em>work with</em></h2>
-        </FadeIn>
-        <div className="skills-container">
-          {data.skills.map((cat, i) => (
-            <FadeIn key={i} delay={i * 100}>
-              <div className="skill-category-title">{cat.category}</div>
-              <div className="skills-grid">
-                {cat.items.map((skill, j) => (
-                  <div className="skill-pill" key={j}>{skill}</div>
+        <div className="sec">
+          <Rev>
+            <div className="sec-eyebrow"><span className="sec-num">01</span><span className="sec-label">About Me</span></div>
+            <h2 className="sec-title">Crafting <em>interfaces</em> that<br />actually <span className="coral">matter</span></h2>
+          </Rev>
+          <div className="about-layout">
+            <Rev delay={100}>
+              <div className="about-text">
+                <p>I'm a <span className="highlight">Frontend Developer</span> with 2+ years of production experience building secure, scalable web applications for banking and EdTech platforms. My craft sits at the crossroads of clean engineering and thoughtful UI design.</p>
+                <p>At <strong>WeCodee Innovations</strong>, I work on real-world banking applications — handling everything from role-based access control to RESTful API integrations. I also <strong>mentor junior developers</strong>, helping them level up with React, Angular, RxJS, and NgRx.</p>
+                <p>Before that, at <strong>HRlytics</strong>, I built two AI-powered examination modules and a real-time analytics dashboard that shipped to thousands of learners — reducing future dev time by <strong>30%</strong> through reusable component systems.</p>
+              </div>
+            </Rev>
+            <Rev delay={200}>
+              <div className="about-cards">
+                {[
+                  { val: "2+", label: "Years Experience" },
+                  { val: "8+", label: "Projects Shipped" },
+                  { val: "4", label: "Devs Mentored" },
+                  { val: "30%", label: "Dev Time Saved" },
+                ].map((c, i) => (
+                  <div className="about-card" key={i}>
+                    <div className="card-val">{c.val}</div>
+                    <div className="card-label">{c.label}</div>
+                  </div>
                 ))}
               </div>
-            </FadeIn>
-          ))}
+            </Rev>
+          </div>
         </div>
       </section>
 
-      <div className="divider" />
-
-      {/* PROJECTS */}
-      <section id="projects">
-        <FadeIn>
-          <div className="section-label">03 — Projects</div>
-          <h2 className="section-title">Things I've <em>built</em></h2>
-        </FadeIn>
-        <div className="projects-grid">
-          {data.projects.map((p, i) => (
-            <FadeIn key={i} delay={i * 80}>
-              <div className="project-card">
-                <div className="project-num">0{i + 1}</div>
-                <div className="project-title">{p.title}</div>
-                <div className="project-desc">{p.desc}</div>
-                <div className="project-tags">
-                  {p.tags.map((t, j) => <span className="project-tag" key={j}>{t}</span>)}
-                </div>
-                <span className="project-link">↗</span>
+      {/* SKILLS */}
+      <div className="skills-full" id="skills">
+        <div className="skills-inner">
+          <Rev>
+            <div className="sec-eyebrow"><span className="sec-num">02</span><span className="sec-label">Skills</span></div>
+            <h2 className="sec-title">My <em>tech</em> <span className="yellow">stack</span></h2>
+          </Rev>
+          <Rev delay={100}>
+            <div className="skills-tabs">
+              {Object.keys(skills).map(k => (
+                <button key={k} className={`skill-tab${activeSkill === k ? " active" : ""}`} onClick={() => setActiveSkill(k)}>{k}</button>
+              ))}
+            </div>
+            {Object.entries(skills).map(([k, v]) => (
+              <div key={k} className={`skill-panel${activeSkill === k ? " active" : ""}`}>
+                <SkillBars items={v} active={activeSkill === k} />
               </div>
-            </FadeIn>
-          ))}
+            ))}
+          </Rev>
         </div>
-      </section>
-
-      <div className="divider" />
+      </div>
 
       {/* EXPERIENCE */}
       <section id="experience">
-        <FadeIn>
-          <div className="section-label">04 — Experience</div>
-          <h2 className="section-title">Where I've <em>worked</em></h2>
-        </FadeIn>
-        <FadeIn delay={100}>
-          <div className="exp-timeline">
-            {data.experience.map((e, i) => (
-              <div className="exp-item" key={i}>
-                <div className="exp-period">{e.period}</div>
-                <div className="exp-role">{e.role}</div>
-                <div className="exp-company">{e.company}</div>
-                <div className="exp-desc">{e.desc}</div>
+        <div className="sec">
+          <Rev>
+            <div className="sec-eyebrow"><span className="sec-num">03</span><span className="sec-label">Experience</span></div>
+            <h2 className="sec-title">Where I've <em>worked</em></h2>
+          </Rev>
+          <Rev delay={100}>
+            <div className="exp-tabs">
+              {experience.map((e, i) => (
+                <button key={i} className={`exp-tab${activeExp === i ? " active" : ""}`} onClick={() => setActiveExp(i)}>{e.tab}</button>
+              ))}
+            </div>
+            {experience.map((e, i) => (
+              <div key={i} className={`exp-panel${activeExp === i ? " active" : ""}`}>
+                <div className="exp-header">
+                  <div className="exp-role-title">{e.role}</div>
+                  <div className="exp-meta">
+                    <span className="exp-company-badge">⚡ {e.company}</span>
+                    <span className="exp-period-badge">{e.period}</span>
+                  </div>
+                </div>
+                <ul className="exp-bullets">
+                  {e.bullets.map((b, j) => (
+                    <li key={j}><div className="exp-bullet-icon">✦</div>{b}</li>
+                  ))}
+                </ul>
               </div>
             ))}
-          </div>
-        </FadeIn>
-      </section>
-
-      <div className="divider" />
-
-      {/* CONTACT */}
-      <section id="contact">
-        <FadeIn>
-          <div className="section-label">05 — Contact</div>
-          <h2 className="section-title">Let's <em>work together</em></h2>
-        </FadeIn>
-        <div className="contact-wrapper">
-          <FadeIn delay={100}>
-            <div className="contact-info">
-              <p>Have a project in mind or just want to say hello? My inbox is always open. I'll try my best to get back to you!</p>
-              <div className="contact-links">
-                <a href={`mailto:${data.contact.email}`} className="contact-link">
-                  <span className="contact-link-icon">✉</span>
-                  {data.contact.email}
-                </a>
-                <a href="#" className="contact-link">
-                  <span className="contact-link-icon">⌥</span>
-                  {data.contact.github}
-                </a>
-                <a href="#" className="contact-link">
-                  <span className="contact-link-icon">in</span>
-                  {data.contact.linkedin}
-                </a>
-                <a href="#" className="contact-link">
-                  <span className="contact-link-icon">𝕏</span>
-                  {data.contact.twitter}
-                </a>
-              </div>
-            </div>
-          </FadeIn>
-          <FadeIn delay={200}>
-            <div className="contact-form">
-              <div className="form-group">
-                <label className="form-label">Name</label>
-                <input className="form-input" placeholder="Your name" value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Email</label>
-                <input className="form-input" placeholder="your@email.com" value={formData.email}
-                  onChange={e => setFormData({ ...formData, email: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Message</label>
-                <textarea className="form-textarea" placeholder="Tell me about your project..."
-                  value={formData.message}
-                  onChange={e => setFormData({ ...formData, message: e.target.value })} />
-              </div>
-              <button className="btn-primary" onClick={handleSubmit} style={{ width: "fit-content" }}>
-                {sent ? "✓ Message Sent!" : "Send Message →"}
-              </button>
-            </div>
-          </FadeIn>
+          </Rev>
         </div>
       </section>
 
+      {/* PROJECTS */}
+      <section id="projects" style={{ background: "var(--black2)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
+        <div className="sec">
+          <Rev>
+            <div className="sec-eyebrow"><span className="sec-num">04</span><span className="sec-label">Projects</span></div>
+            <h2 className="sec-title">Things I've <em>built</em></h2>
+          </Rev>
+          <Rev delay={100}>
+            <div className="projects-layout">
+              {projects.map((p, i) => (
+                <div className="proj-card" key={i}>
+                  <div className="proj-card-glow" />
+                  <div className="proj-num">0{i + 1}</div>
+                  <div className="proj-title">{p.name}</div>
+                  <div className="proj-desc">{p.desc}</div>
+                  <div className="proj-footer">
+                    <div className="proj-tags">
+                      {p.tags.map((t, j) => <span key={j} className={`proj-tag ${j === 1 ? p.color : ""}`}>{t}</span>)}
+                    </div>
+                    <div className="proj-arrow">↗</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Rev>
+        </div>
+      </section>
+
+      {/* EDUCATION */}
+      <section id="education">
+        <div className="sec">
+          <Rev>
+            <div className="sec-eyebrow"><span className="sec-num">05</span><span className="sec-label">Education</span></div>
+            <h2 className="sec-title">Academic <em>background</em></h2>
+          </Rev>
+          <Rev delay={100}>
+            <div className="edu-layout">
+              {education.map((e, i) => (
+                <div className="edu-card" key={i}>
+                  <div className="edu-icon">{e.icon}</div>
+                  <div className="edu-deg">{e.deg}</div>
+                  <div className="edu-school">{e.school}</div>
+                  <div className="edu-score">★ {e.score}</div>
+                </div>
+              ))}
+            </div>
+          </Rev>
+        </div>
+      </section>
+
+      {/* CONTACT */}
+      <div className="contact-full" id="contact">
+        <div className="contact-inner">
+          <Rev>
+            <div className="sec-eyebrow"><span className="sec-num">06</span><span className="sec-label">Contact</span></div>
+            <h2 className="sec-title">Let's <em>work</em> together</h2>
+          </Rev>
+          <Rev delay={100}>
+            <p className="contact-blurb">Have a project, a role, or just want to chat about frontend? <strong>My inbox is open.</strong> I'm always interested in new challenges and meaningful work.</p>
+            <div className="contact-links">
+              {[
+                { icon: "✉", label: "Email", val: "suryarhms@gmail.com", href: "mailto:suryarhms@gmail.com" },
+                { icon: "📞", label: "Phone", val: "6383561509", href: "tel:6383561509" },
+                { icon: "💼", label: "LinkedIn", val: "linkedin.com/in/suryarravichandran", href: "#" },
+                { icon: "📍", label: "Location", val: "Coimbatore, Tamil Nadu", href: "#" },
+              ].map((c, i) => (
+                <a key={i} className="c-link" href={c.href}>
+                  <div className="c-icon">{c.icon}</div>
+                  <div className="c-info">
+                    <span className="c-info-label">{c.label}</span>
+                    <span className="c-info-val">{c.val}</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </Rev>
+        </div>
+      </div>
+
       <footer>
-        <p>Designed & built by <span>{data.name}</span> · {new Date().getFullYear()}</p>
+        <p>© {new Date().getFullYear()} <span>Surya R.</span> — Frontend Developer</p>
+        <p>Built with <span>React.js</span> · Coimbatore, India 🇮🇳</p>
       </footer>
     </>
   );
 }
-
-export default App;
